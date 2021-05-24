@@ -6,8 +6,7 @@ DB Setup  (DB Tier)
     Use RDS for managing PostgreSQLs. The benefits are Managed Service,Highly Available and less Maintenance. This can be created using Terraform Resource (https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/db_instance)
     Use Multi AZ for  High Availability. Can Leverage Read replicas for frequently read data. Can be promoted to Master as well but 
     not recommended.
-    Separate out the database update part from the App itself as decoupling of functionality will help if there are issues reported 
-    in one of the functions the rest of the app can run without issues (Loosely coupled Application).
+    Separate out the database update part from the App itself as decoupling of functionality will help if there are issues reported in one of the functions the rest of the app can run without issues (Loosely coupled Application).
     For Running create the database, tables, and seed with test data. Use Job resource in Kubernetes(https://kubernetes.io/docs/concepts/workloads/controllers/job/) which can be created and run through
     a pipe as and when the need arises. The sample code is given in the same repo. job.yaml.
     Separate out DB config from the code so that it can be independently managed using a config map. This will ease out the process of building 
