@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pravin-test
+  labels:
+    app: pravin-test
+  namespace: pravin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pravin-test
+  template:
+    metadata:
+      labels:
+        app: pravin-test
+    spec:
+      containers:
+      - image:  {$ACC_NAME}.dkr.ecr.ap-southeast-2.amazonaws.com/pravintest:latest
+        name: pravin-test
+        args: ["serve"]
+        ports:
+        - containerPort: 3000
+          name: server
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthcheck/
+            port: 3000
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          limits:
+            cpu: 1500m
+            memory: 1Gi
+          requests:
+            cpu: "1"
+            memory: 0.5Gi
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: pravin-test
+  labels:  # can't use anchors across YAML documents unfortunately
+    app: pravin-test
+  namespace: pravin
+spec:
+  selector:
+    app: pravin-test
+  ports:
+  - protocol: TCP
+    port: 3000
+    targetPort: 3000
+
+
+---
+
+
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: pravin-test
+  namespace: pravin
+spec:
+  hosts:
+  - "pravin-test.{$DNS}"
+  gateways:
+  - istio-system/{$GW_NAME}
+  http:
+  - match:
+    - port: 443
+route:
+    - destination:
+        host:  pravin-test.pravin.svc.cluster.local
+        port:
+          number:  3000

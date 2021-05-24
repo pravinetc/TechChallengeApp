@@ -1,0 +1,13 @@
+piVersion: batch/v1
+kind: Job
+metadata:
+  name: pravin-test
+spec:
+  template:
+    spec:
+      containers:
+      - name: pravin-test
+        image: {accountname}.dkr.ecr.ap-southeast-2.amazonaws.com/pravintest:latest
+        arg: ["updatedb"]
+      restartPolicy: Never
+  backoffLimit: 4

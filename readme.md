@@ -1,33 +1,35 @@
-# Servian DevOps Tech Challenge - Tech Challenge App
+Platform
+    Use AWS EKS for managing the app. Deploy the AWS EKS in a Private subnet. One Subnet per AZ. Its fully managed API/Control Pane Service by AWS.
+    Use the Terraform Resource to create EKS (https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eks_cluster)
 
-[![Build Status][circleci-badge]][circleci]
-[![Release][release-badge]][release]
-[![GoReportCard][report-badge]][report]
-[![License][license-badge]][license]
+DB Setup  (DB Tier)
+    Use RDS for managing PostgreSQLs. The benefits are Managed Service,Highly Available and less Maintenance. This can be created using Terraform Resource (https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/db_instance)
+    Use Multi AZ for  High Availability. Can Leverage Read replicas for frequently read data. Can be promoted to Master as well but 
+    not recommended.
+    Separate out the database update part from the App itself as decoupling of functionality will help if there are issues reported 
+    in one of the functions the rest of the app can run without issues (Loosely coupled Application).
+    For Running create the database, tables, and seed with test data. Use Job resource in Kubernetes(https://kubernetes.io/docs/concepts/workloads/controllers/job/) which can be created and run through
+    a pipe as and when the need arises. The sample code is given in the same repo. job.yaml.
+    Separate out DB config from the code so that it can be independently managed using a config map. This will ease out the process of building 
+    an whole app when only config/property is changed. Creation of config map can be piped separately and the config can be mounted as a volume 
+    on deployment/job/etc. This helps us with Segregating the Environments easily 
+    The code for DB needs to altered so that DB username and Password can be picked from Environment variable instead of a file as it brings issue with
+    storing password in the file. With the Environment variable we can inject them as kubernetes secrets. For more secure way the same username and password
+    can be stored in AWS Secret Manager and then can be fetched into the Cluster using Kubernetes external Secrets (https://github.com/external-secrets/kubernetes-external-secrets) this allows an easy and secure way of 
+    managing critical data. The entire file can also be created as secret and then mounted as volume then there is no need for creating a Config Map.
 
-[circleci-badge]: https://circleci.com/gh/servian/TechChallengeApp.svg?style=shield&circle-token=8dfd03c6c2a5dc5555e2f1a84c36e33bc58ad0aa
-[circleci]: https://circleci.com/gh/servian/TechChallengeApp
-[release-badge]: http://img.shields.io/github/release/servian/TechChallengeApp/all.svg?style=flat
-[release]:https://github.com/Servian/TechChallengeApp/releases
-[report-badge]: https://goreportcard.com/badge/github.com/Servian/TechChallengeApp
-[report]: https://goreportcard.com/report/github.com/Servian/TechChallengeApp
-[license-badge]: https://img.shields.io/github/license/Servian/TechChallengeApp.svg?style=flat
-[license]: https://github.com/Servian/TechChallengeApp/license
 
-## Overview
+App Setup (Deployed on Platform EKS in Private Tier)
+    Use Deployment Spec for Creating and Deploying an Application onto Kubernetes Cluster. It will manage the state of the Application
+    and will make sure the app is available 24*7.
+    Sample Deployment Spec is given in the repo(deploy.yaml). Replication controller will make sure the set number of pod/workload of application 
+    are available all the time. Scheduler will make sure that the pod is scheduled on the node and will also make sure that it is moved from one node to 
+    another if there are any underlying issues.
+    App should only host the API as mentioned in the above section. Set proper readiness and liveness probe so that the app is always available and API Server
+    checks the status of the app.
+    Segregate the Apps per namespaces and limit the resources per app and per namespaces.
+    App can be externally access using a Ingress Resource or Gateway(Istio) which actually is an AWS ELB/ALB/NLB and then by Creating an entry in R53 Hosted Zone 
+    to point to that LoadBalancer.
 
-This is the Servian DevOps Tech challenge. It uses a simple application to help measure a candidate's technical capability and fit with Servian. The application itself is a simple GTD Golang application that is backed by a Postgres database.
 
-Servian provides the Tech Challenge to potential candidates, which focuses on deploying this application into a cloud environment of choice.
-
-More details about the application can be found in the [document folder](doc/readme.md)
-
-## Taking the challenge
-
-For more information about taking the challenge and joining Servians's amazing team, please head over to our [recruitment page](https://www.servian.com/careers/) and apply there. Our recruitment team will reach out to you about the details of the test and be able to answer any questions you have about Servian or the test itself.
-
-Information about the assessment is available in the [assessment.md file](ASSESSMENT.md)
-
-## Found an issue?
-
-If you've found an issue with the application, the documentation, or anything else, we are happy to take contributions. Please raise an issue in the [github repository](https://github.com/Servian/TechChallengeApp/issues) and read through the contribution rules found the [CONTRIBUTING.md](CONTRIBUTING.md) file for the details.
+Deploy Files are present under Kubernetes Folder
